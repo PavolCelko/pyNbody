@@ -64,22 +64,39 @@ class Vector:
         self.x = x
         self.y = y
 
+    def __add__(self, other):
+        x = self.x + other.x
+        y = self.y + other.y
+        return Vector(x, y)
+
+    def __mul__(self, other):
+        x = self.x * other
+        y = self.y * other
+        return Vector(x, y)
+
+    def __sub__(self, other):
+        return self.__add__(other * (-1))
+
+    def __truediv__(self, other):
+        return self.__mul__(1 / other)
+
+    def __abs__(self):
+        return np.sqrt(self.x ** 2 + self.y ** 2)
+
 
 class BodyObj:
     def __init__(self, mass, x_pos, y_pos, x_vel, y_vel):
         self.mass = mass
-        self.position = np.array([x_pos, y_pos])
-        self.velocity = np.array([x_vel, y_vel])
-        self.acceleration = np.array([0, 0])
+        self.position = Vector(x_pos, y_pos)
+        self.velocity = Vector(x_vel, y_vel)
+        self.acceleration = Vector(0, 0)
 
     def precalc_vector_gravitational_acceleration_from_other_bodies(self, other_bodies):
-        acceleration_from_other_bodies = 0
+        acceleration_from_other_bodies = Vector(0, 0)
         for other_body in other_bodies:
             if other_body is not self:
-                r_x = self.position[0] - other_body.position[0]
-                r_y = self.position[1] - other_body.position[1]
-                r_abs = np.sqrt(r_x ** 2 + r_y ** 2)
-                acceleration_from_other_body = KAPPA * other_body.mass * (-1) * np.array([r_x, r_y]) / r_abs ** 3
+                r_vect = self.position - other_body.position
+                acceleration_from_other_body = r_vect * KAPPA * other_body.mass * (-1) / abs(r_vect) ** 3
                 acceleration_from_other_bodies += acceleration_from_other_body
         self.acceleration = acceleration_from_other_bodies
 
@@ -112,8 +129,8 @@ def main():
                    x_pos=EARTH_PERIHELION_DISTANCE, y_pos=0,
                    x_vel=0, y_vel=EARTH_PERIHELION_VELOTITY)
     moon = BodyObj(mass=MOON_MASS,
-                   x_pos=MOON_PERIGEE_DISTANCE + earth.position[0], y_pos=0 + earth.position[1],
-                   x_vel=0+earth.velocity[0], y_vel=MOON_PERIGEE_VELOTITY + earth.velocity[1])
+                   x_pos=MOON_PERIGEE_DISTANCE + earth.position.x, y_pos=0 + earth.position.y,
+                   x_vel=0+earth.velocity.x, y_vel=MOON_PERIGEE_VELOTITY + earth.velocity.y)
     mars = BodyObj(mass=MARS_MASS,
                    x_pos=MARS_PERIHELION_DISTANCE, y_pos=0,
                    x_vel=0, y_vel=MARS_PERIHELION_VELOTITY)
@@ -131,7 +148,7 @@ def main():
                    x_vel=0, y_vel=NEPTUNE_PERIHELION_VELOTITY)
 
     static_zero_point = BodyObj(mass=0,
-                   x_pos=sun.position[0], y_pos=sun.position[1],
+                   x_pos=sun.position.x, y_pos=sun.position.y,
                    x_vel=0, y_vel=0)
 
     # TODO create a system class. At construction, it must verify if two objects overlap
@@ -191,7 +208,7 @@ def main():
     t1 = time.time()
     analyzed_distance = []
     for body, observer in zip(log_plotted_body_data.values(), log_observer_data.values()):
-        dist_from_observer = np.sqrt((body.position[0] - observer.position[0])**2 + (body.position[1] - observer.position[1])**2)
+        dist_from_observer = abs(body.position - observer.position)
         analyzed_distance.append(round(dist_from_observer))
 
     simout_planet_aphelion = max(analyzed_distance)
@@ -201,7 +218,7 @@ def main():
 
     log_to_file = []
     for t_stamp, body in log_plotted_body_data.items():
-        log_line = [str(item) for item in (t_stamp, body.position[0], body.position[1], '\n')]
+        log_line = [str(item) for item in (t_stamp, body.position.x, body.position.y, '\n')]
         log_to_file.append(str.join(',', log_line))
     with open("logfile.txt", "w") as fw:
         fw.writelines(log_to_file)
@@ -211,8 +228,9 @@ def main():
     # ==============================================================
     # ==============================================================
     print('\nData imaging')
-    x = [body.position[0] - obsv.position[0] for body, obsv in zip(log_plotted_body_data.values(), log_observer_data.values())]
-    y = [body.position[1] - obsv.position[1] for body, obsv in zip(log_plotted_body_data.values(), log_observer_data.values())]
+    track = [body.position - obsv.position for body, obsv in zip(log_plotted_body_data.values(), log_observer_data.values())]
+    x = [item.x for item in track]
+    y = [item.y for item in track]
     plt.plot(x, y)
     plt.show()
     return
