@@ -167,7 +167,7 @@ def main():
 
     earth_balanced_with_moon = BodyObj(mass=EARTH_MASS,
                    x_pos=EARTH_PERIHELION_DISTANCE, y_pos=0,
-                   x_vel=0, y_vel=-13.045)
+                   x_vel=0, y_vel=-13.045*0)
     moon_balanced_with_earth = BodyObj(mass=MOON_MASS,
                    x_pos=MOON_PERIGEE_DISTANCE+earth_balanced_with_moon.position.x, y_pos=0+earth_balanced_with_moon.position.y,
                    x_vel=0, y_vel=MOON_PERIGEE_VELOTITY+earth_balanced_with_moon.velocity.y)
