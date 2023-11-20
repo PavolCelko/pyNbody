@@ -123,8 +123,8 @@ class BodyObj:
 
 def main():
     start_time = 0
-    end_time = 10 * YEAR_sec
-    dt = 6 * HOUR_sec
+    end_time = 3 * MONTH_sec
+    dt = 1 * HOUR_sec
     no_of_time_points = 1 + round((end_time - start_time) / dt)
     t_sim = np.linspace(start_time, end_time, no_of_time_points)
 
@@ -165,14 +165,25 @@ def main():
                    x_pos=sun.position.x, y_pos=sun.position.y,
                    x_vel=0, y_vel=0)
 
+    earth_balanced_with_moon = BodyObj(mass=EARTH_MASS,
+                   x_pos=EARTH_PERIHELION_DISTANCE, y_pos=0,
+                   x_vel=0, y_vel=-13.045)
+    moon_balanced_with_earth = BodyObj(mass=MOON_MASS,
+                   x_pos=MOON_PERIGEE_DISTANCE+earth_balanced_with_moon.position.x, y_pos=0+earth_balanced_with_moon.position.y,
+                   x_vel=0, y_vel=MOON_PERIGEE_VELOTITY+earth_balanced_with_moon.velocity.y)
+
+    static_zero_point = BodyObj(mass=0,
+                   x_pos=earth_balanced_with_moon.position.x, y_pos=earth_balanced_with_moon.position.y,
+                   x_vel=0, y_vel=0)
+
     # TODO create a system class. At construction, it must verify if two objects overlap
     # solar_system_bodies = [sun, earth, jupiter, saturn]
     # solar_system_bodies = [sun, venus, earth, moon]
-    solar_system_bodies = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, moon]
+    # solar_system_bodies = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, moon]
     # solar_system_bodies = [sun, earth]
-    # solar_system_bodies = [earth, moon]
-    plotted_body = earth
-    observer_body = sun
+    solar_system_bodies = [earth_balanced_with_moon, moon_balanced_with_earth]
+    plotted_body = earth_balanced_with_moon
+    observer_body = static_zero_point
 
     log_plotted_body_data = dict()
     log_observer_data = dict()
