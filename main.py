@@ -1,6 +1,7 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import copy
+import itertools
 import time
 
 import matplotlib.pyplot as plt
@@ -114,11 +115,21 @@ class BodyObj:
                 acceleration_from_other_bodies += acceleration_from_other_body
         self.acceleration = acceleration_from_other_bodies
 
+    def precalc_vector_gravitational_accelerations_between_two_bodies(self, other_body):
+        r_vect = self.position - other_body.position
+        precalc_value = (-1) * KAPPA * r_vect / abs(r_vect) ** 3
+        self.acceleration += precalc_value * other_body.mass
+        other_body.acceleration += precalc_value * self.mass * (-1)
+
     def apply_acceleration_on_body(self, dt):
         dv = self.acceleration * dt
         self.velocity = self.velocity + dv
         ds = self.velocity * dt
         self.position = self.position + ds
+
+
+def calc_eccentricity(perihelion, aphelion):
+    return (aphelion - perihelion) / (aphelion + perihelion)
 
 
 def main():
@@ -174,6 +185,8 @@ def main():
     plotted_body = earth
     observer_body = sun
 
+    bodies_pairs = tuple(itertools.combinations(solar_system_bodies, 2))
+
     log_plotted_body_data = dict()
     log_observer_data = dict()
 
@@ -181,7 +194,9 @@ def main():
 
     for t_tick in t_sim:
         for body in solar_system_bodies:
-            body.precalc_vector_gravitational_acceleration_from_other_bodies(other_bodies=solar_system_bodies)
+            body.acceleration = Vector(0, 0)
+        for planet_pair in bodies_pairs:
+            planet_pair[0].precalc_vector_gravitational_accelerations_between_two_bodies(planet_pair[1])
         for body in solar_system_bodies:
             body.apply_acceleration_on_body(dt=dt)
 
@@ -227,8 +242,10 @@ def main():
 
     simout_planet_aphelion = max(analyzed_distance)
     simout_planet_perihelion = min(analyzed_distance)
+    eccentricity = calc_eccentricity(perihelion=simout_planet_perihelion, aphelion=simout_planet_aphelion)
     print("Planet aphelion: " + str(round(simout_planet_aphelion / 1e9, 3)) + " mil km")
     print("Planet perihelion: " + str(round(simout_planet_perihelion / 1e9, 3)) + " mil km")
+    print("Planet orbital eccentricity: " + str(eccentricity))
 
     log_to_file = []
     for t_stamp, body in log_plotted_body_data.items():
