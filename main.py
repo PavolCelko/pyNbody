@@ -141,6 +141,13 @@ def main():
 
     log_period = 1 * HOUR_sec
     stats_printout_period = min(0.01 * (end_time - start_time), 1 * YEAR_sec)
+    distance_tracker_sample_period = DAY_sec
+    eccentricity_tracker_sample_period = YEAR_sec
+    time_tracker = []
+    distance_tracker = []
+    perihelion_tracker = []
+    aphelion_tracker = []
+    eccentricity_tracker = []
 
     sun = BodyObj(SUN_MASS,
                    x_pos=0, y_pos=0, x_vel=0, y_vel=0)
@@ -200,9 +207,22 @@ def main():
         for body in solar_system_bodies:
             body.apply_acceleration_on_body(dt=dt)
 
-        if t_tick % log_period == 0:
-            log_plotted_body_data.update({t_tick: copy.copy(plotted_body)})
-            log_observer_data.update({t_tick: copy.copy(observer_body)})
+        # if t_tick % log_period == 0:
+        #     log_plotted_body_data.update({t_tick: copy.copy(plotted_body)})
+        #     log_observer_data.update({t_tick: copy.copy(observer_body)})
+
+        if t_tick % distance_tracker_sample_period == 0 and t_tick > 0:
+            distance_tracker.append(abs(plotted_body.position - observer_body.position))
+
+        if t_tick % eccentricity_tracker_sample_period == 0 and t_tick > 0:
+            perihel = min(distance_tracker)
+            aphel = max(distance_tracker)
+            time_tracker.append(t_tick)
+            perihelion_tracker.append(perihel)
+            aphelion_tracker.append(aphel)
+            eccentricity_tracker.append(calc_eccentricity(perihelion=perihel, aphelion=aphel))
+            # log_eccentricity.update({t_tick: calc_eccentricity(perihelion=perihel, aphelion=aphel)})
+            distance_tracker = []
 
         if t_tick % stats_printout_period == 0 and t_tick > 0:
             tx = time.time()
@@ -234,18 +254,18 @@ def main():
     # ==============================================================
     # ==============================================================
     print('\nData post-processing')
-    t1 = time.time()
-    analyzed_distance = []
-    for body, observer in zip(log_plotted_body_data.values(), log_observer_data.values()):
-        dist_from_observer = abs(body.position - observer.position)
-        analyzed_distance.append(round(dist_from_observer))
-
-    simout_planet_aphelion = max(analyzed_distance)
-    simout_planet_perihelion = min(analyzed_distance)
-    eccentricity = calc_eccentricity(perihelion=simout_planet_perihelion, aphelion=simout_planet_aphelion)
-    print("Planet aphelion: " + str(round(simout_planet_aphelion / 1e9, 3)) + " mil km")
-    print("Planet perihelion: " + str(round(simout_planet_perihelion / 1e9, 3)) + " mil km")
-    print("Planet orbital eccentricity: " + str(eccentricity))
+    # t1 = time.time()
+    # analyzed_distance = []
+    # for body, observer in zip(log_plotted_body_data.values(), log_observer_data.values()):
+    #     dist_from_observer = abs(body.position - observer.position)
+    #     analyzed_distance.append(round(dist_from_observer))
+    #
+    # simout_planet_aphelion = max(analyzed_distance)
+    # simout_planet_perihelion = min(analyzed_distance)
+    # eccentricity = calc_eccentricity(perihelion=simout_planet_perihelion, aphelion=simout_planet_aphelion)
+    # print("Planet aphelion: " + str(round(simout_planet_aphelion / 1e9, 3)) + " mil km")
+    # print("Planet perihelion: " + str(round(simout_planet_perihelion / 1e9, 3)) + " mil km")
+    # print("Planet orbital eccentricity: " + str(eccentricity))
 
     log_to_file = []
     for t_stamp, body in log_plotted_body_data.items():
@@ -259,10 +279,17 @@ def main():
     # ==============================================================
     # ==============================================================
     print('\nData imaging')
-    track = [body.position - obsv.position for body, obsv in zip(log_plotted_body_data.values(), log_observer_data.values())]
-    x = [item.x for item in track]
-    y = [item.y for item in track]
+    # track = [body.position - obsv.position for body, obsv in zip(log_plotted_body_data.values(), log_observer_data.values())]
+    # x = [item.x for item in track]
+    # y = [item.y for item in track]
+    print("max ecc " + str(round(max(eccentricity_tracker), 4)))
+    print("min ecc " + str(round(min(eccentricity_tracker), 4)))
+    print("min perihelion " + str(round(min(perihelion_tracker) / 1e9, 3)))
+    print("min aphelion " + str(round(min(aphelion_tracker) / 1e9, 3)))
+    x = [item/eccentricity_tracker_sample_period for item in time_tracker]
+    y = [item for item in eccentricity_tracker]
     plt.plot(x, y)
+    plt.ylim(0, 1.5*max(y))
     plt.show()
     return
 
