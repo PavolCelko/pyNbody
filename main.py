@@ -65,14 +65,28 @@ class Vector:
         self.y = y
 
     def __add__(self, other):
-        x = self.x + other.x
-        y = self.y + other.y
+        if type(other) is type(self):
+            x = self.x + other.x
+            y = self.y + other.y
+        else:
+            x = self.x + other
+            y = self.y + other
         return Vector(x, y)
 
+    def __radd__(self, other):
+        return self.__add__(other)
+
     def __mul__(self, other):
-        x = self.x * other
-        y = self.y * other
+        if type(other) is type(self):
+            x = self.x * other.x
+            y = self.y * other.y
+        else:
+            x = self.x * other
+            y = self.y * other
         return Vector(x, y)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
     def __sub__(self, other):
         return self.__add__(other * (-1))
@@ -96,7 +110,7 @@ class BodyObj:
         for other_body in other_bodies:
             if other_body is not self:
                 r_vect = self.position - other_body.position
-                acceleration_from_other_body = r_vect * KAPPA * other_body.mass * (-1) / abs(r_vect) ** 3
+                acceleration_from_other_body = (-1) * KAPPA * other_body.mass * r_vect / abs(r_vect) ** 3
                 acceleration_from_other_bodies += acceleration_from_other_body
         self.acceleration = acceleration_from_other_bodies
 
